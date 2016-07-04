@@ -1,0 +1,27 @@
+{
+  "name": "orange-dashboard",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "install": "node ./bin/orange-dashboard build",
+    "start": "node ./bin/orange-dashboard start"
+  },
+  "description": "Orange Dashboard Management",
+  "homepage": "https://github.com/sumory/orange",
+  "author": "Syhily",
+  "license": "MIT",
+  "bin": {
+    "orange-dashboard": "./bin/orange-dashboard.js"
+  },
+  "dependencies": {
+    "bower": "^1.7.9",
+    "fs-extra": "^0.30.0",
+    "glob": "^7.0.5",
+    "minimist": "^1.2.0",
+    "node-sass": "^3.8.0",
+    "rimraf": "^2.5.3",
+    "serve": "^1.4.0",
+    "uglify-js": "^2.7.0"
+  },
+  "devDependencies": {}
+}
