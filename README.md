@@ -54,7 +54,6 @@ Import `install/orange-${version}` to MySQL and modify `store_mysql` as you want
 
 Then just type `sh start.sh` to start Orange. Maybe you should check the start script and customize it for your own need.
 
-
 ### Documents
 
 Find all about **Orange** on [Documents Website](http://orange.sumory.com/docs). There is only a Chinese version for now.
@@ -69,6 +68,9 @@ Find all about **Orange** on [Documents Website](http://orange.sumory.com/docs).
 
 - 雨帆[@syhily](https://github.com/syhily)
 
+### For Contributors
+
+1. Code Style: We use [EditorConfig](http://editorconfig.org) for consistent code style. Your should set your editor and format your code before pulling request.
 
 ### See also
 
