@@ -1,0 +1,21 @@
+<div class="container">
+    <h3 class="header center-align">Welcome to your Orange Dashboard</h3>
+
+    <div class="row">
+        <div class="col s12 m4 home-block" ng-repeat="plugin in plugins">
+            <div class="card center">
+                <div class="card-content">
+                    <h3 class="card-title text-capitalize">{{plugin.name}}</h3>
+                    <p class="chip white-text {{ plugin.enable === true ? 'cyan lighten-1' : 'pink lighten-2' }}">{{
+                        plugin.enable === true ? "Enabled" : "Disabled" }}</p>
+                </div>
+                <div class="card-action">
+                    <a class="waves-effect waves-light btn white-text"><i class="material-icons left">check</i>
+                        {{plugin.active_rule_count}}</a>
+                    <a class="waves-effect waves-light red btn white-text"><i class="material-icons left">clear</i>
+                        {{plugin.inactive_rule_count}}</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

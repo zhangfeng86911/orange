@@ -40,7 +40,7 @@ return function(config, store)
                     end
                 end
             end
-            plugins[v] = tmp
+            plugins[i] = tmp
         end
 
         res:json({

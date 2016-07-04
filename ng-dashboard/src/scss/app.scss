@@ -42,6 +42,18 @@ h1, h2, h3, h4, h5, h6 {
     font-weight: 300;
 }
 
+// Alignment
+.text-left           { text-align: left; }
+.text-right          { text-align: right; }
+.text-center         { text-align: center; }
+.text-justify        { text-align: justify; }
+.text-nowrap         { white-space: nowrap; }
+
+// Transformation
+.text-lowercase      { text-transform: lowercase; }
+.text-uppercase      { text-transform: uppercase; }
+.text-capitalize     { text-transform: capitalize; }
+
 .header {
     color: $primary-color;
     font-weight: 300;
@@ -87,8 +99,10 @@ a {
     position: static;
 }
 
-.home-block p {
-    text-align: justify;
+.home-block {
+    .card-action a {
+        margin: 5px;
+    }
 }
 
 .errors ul {

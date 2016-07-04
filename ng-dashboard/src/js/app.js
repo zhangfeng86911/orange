@@ -17,8 +17,12 @@ var orange = angular.module('orange', ['ngRoute', 'ngCookies', 'ngAnimate', 'ngS
         $routeProvider
             .when('/', {
                 templateUrl: 'html/home.html',
+                controller: 'IndexController',
                 resolve: {
-                    isAppReady: isAppReady
+                    isAppReady: isAppReady,
+                    initialData: ['Orange', '$location', function (Orange) {
+                        return Orange.get('/plugins');
+                    }]
                 }
             })
             .when('/config', {
