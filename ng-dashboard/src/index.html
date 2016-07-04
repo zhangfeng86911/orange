@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="orange" ng-strict-di>
+<head>
+    <meta charset="UTF-8">
+    <title>Orange Dashboard</title>
+    <link rel="stylesheet" href="css/app.min.css">
+</head>
+<body>
+<app-route-loading-indicator></app-route-loading-indicator>
+
+<nav class="top_nav fade ng-hide-animate" ng-show="app.config.url">
+    <ul class="right hide-on-med-and-down">
+        <li>
+            <a href="#/">
+                <i class="material-icons">home</i>
+                Home
+            </a>
+        </li>
+        <li>
+            <a href="#/status">
+                <i class="material-icons">dashboard</i>
+                Global Status
+            </a>
+        </li>
+        <li>
+            <a href="#/monitor">
+                <i class="material-icons">videocam</i>
+                Custom Monitor
+            </a>
+        </li>
+        <li>
+            <a href="#/redirect">
+                <i class="material-icons">swap_horiz</i>
+                URL Redirect
+            </a>
+        </li>
+        <li>
+            <a href="#/rewrite">
+                <i class="material-icons">http</i>
+                URI Rewrite
+            </a>
+        </li>
+        <li>
+            <a href="#/waf">
+                <i class="material-icons">verified_user</i>
+                WAFs
+            </a>
+        </li>
+        <li>
+            <a href="#/divide">
+                <i class="material-icons">shuffle</i>
+                Proxy System
+            </a>
+        </li>
+        <li>
+            <a href="#/config">
+                <i class="material-icons">settings</i>
+                Settings
+            </a>
+        </li>
+    </ul>
+    <ul id="slide-out" class="side-nav">
+        <li>
+            <a href="#/">
+                <i class="material-icons">home</i>
+                Home
+            </a>
+        </li>
+        <li>
+            <a href="#/status">
+                <i class="material-icons">dashboard</i>
+                Global Status
+            </a>
+        </li>
+        <li>
+            <a href="#/monitor">
+                <i class="material-icons">videocam</i>
+                Custom Monitor
+            </a>
+        </li>
+        <li>
+            <a href="#/redirect">
+                <i class="material-icons">swap_horiz</i>
+                URL Redirect
+            </a>
+        </li>
+        <li>
+            <a href="#/rewrite">
+                <i class="material-icons">http</i>
+                URI Rewrite
+            </a>
+        </li>
+        <li>
+            <a href="#/waf">
+                <i class="material-icons">verified_user</i>
+                WAFs
+            </a>
+        </li>
+        <li>
+            <a href="#/divide">
+                <i class="material-icons">shuffle</i>
+                Proxy System
+            </a>
+        </li>
+        <li>
+            <a href="#/config">
+                <i class="material-icons">settings</i>
+                Settings
+            </a>
+        </li>
+    </ul>
+    <a href="#" data-activates="slide-out" class="button-collapse app-slide-out"><i class="material-icons">menu</i></a>
+</nav>
+
+<main ng-view ng-show="initialized"></main>
+<app-loader ng-hide="initialized"></app-loader>
+
+<footer ng-show="app.config.url" class="fade ng-hide-animate">
+    <div class="container">
+        <p class="grey-text text-lighten-4 right">
+            Current orange node:
+            <em>
+                {{app.config.url}}
+                (<a class="white-text" href="#/config" style="text-decoration:underline">Edit</a>)
+            </em>
+        </p>
+    </div>
+</footer>
+
+<script src="js/app.min.js"></script>
+</body>
+</html>

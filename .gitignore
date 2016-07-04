@@ -97,3 +97,5 @@ jspm_packages
 .node_repl_history
 
 bower_components
+
+ng-dashboard/public/

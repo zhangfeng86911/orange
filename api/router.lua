@@ -10,6 +10,12 @@ return function(config, store)
     local stat_api = require("orange.plugins.stat.api")
     local orange_db = require("orange.store.orange_db")
 
+    api_router:get("/", function(req, res, next)
+        res:json({
+            message = "Welcome to Orange"
+        })
+    end)
+
     --- 插件信息
     -- 当前加载的插件，开启与关闭情况, 每个插件的规则条数等
     api_router:get("/plugins", function(req, res, next)
