@@ -15,7 +15,7 @@ exports.build = function () {
         fs.mkdirSync('public/js');
 
         console.log('Downloading javascript librairies...');
-        var cmd = __dirname + "/../node_modules/.bin/bower install";
+        var cmd = __dirname + "/../node_modules/.bin/bower --allow-root install";
         var bowerProcess = child_process.exec(cmd, function (err) {
             if (err) throw err;
             compile_sass();
@@ -71,6 +71,8 @@ var compile_js = function () {
             "./bower_components/angular-animate/angular-animate.min.js",
             "./bower_components/angular-sanitize/angular-sanitize.min.js",
             "./bower_components/Materialize/dist/js/materialize.min.js",
+            "./bower_components/Chart.js/Chart.js", // Should before angular-chart.js
+            "./bower_components/angular-chart.js/angular-chart.js",
         ];
         filenames = filenames.concat(app_filenames);
 

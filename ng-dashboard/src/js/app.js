@@ -1,4 +1,4 @@
-var orange = angular.module('orange', ['ngRoute', 'ngCookies', 'ngAnimate', 'ngSanitize'])
+var orange = angular.module('orange', ['ngRoute', 'ngCookies', 'ngAnimate', 'ngSanitize', 'chart.js'])
     .config(['$routeProvider', function ($routeProvider) {
 
         var appStarted = false;
@@ -25,11 +25,27 @@ var orange = angular.module('orange', ['ngRoute', 'ngCookies', 'ngAnimate', 'ngS
                     }]
                 }
             })
+            .when('/status', {
+                templateUrl: 'html/status.html',
+                controller: 'StatusController'
+            })
             .when('/config', {
                 templateUrl: 'html/config.html',
                 controller: 'ConfigController'
             })
             .otherwise({redirectTo: '/'});
+    }])
+    .config(['ChartJsProvider', function(ChartJsProvider) {
+        // Configure all charts
+        ChartJsProvider.setOptions({
+            colours: ['#97BBCD', '#DCDCDC', '#F7464A', '#46BFBD', '#FDB45C', '#949FB1', '#4D5360'],
+            responsive: true
+        });
+
+        // Configure all doughnut charts
+        ChartJsProvider.setOptions('Doughnut', {
+            animateScale: true
+        });
     }])
     .run(['$rootScope', 'Orange', '$location', function ($rootScope, Orange, $location) {
         $rootScope.initialized = false;

@@ -59,9 +59,9 @@ angular.module('orange')
                 return deferred.promise;
             },
             handleError: function (response, deferred, endpoint) {
-                if (response.data && response.status != 500) {
-                    if (response.data.message) {
-                        Alert.error(response.data.message);
+                if (response.data && response.status !== 500) {
+                    if (response.data.msg) {
+                        Alert.error(response.data.msg);
                     }
                     deferred.reject(response);
                 } else {
