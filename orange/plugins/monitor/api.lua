@@ -7,6 +7,7 @@ local cjson = require("cjson")
 local utils = require("orange.utils.utils")
 local stat = require("orange.plugins.monitor.stat")
 local orange_db = require("orange.store.orange_db")
+local monitor_db = require("orange.plugins.monitor.monitor_db")
 
 
 API["/monitor/enable"] = {
@@ -18,10 +19,13 @@ API["/monitor/enable"] = {
             local result = false
             local monitor_enable = "0"
             if enable then monitor_enable = "1" end
-            local update_result = store:update({
+            local update_result = monitor_db.replace_meta_value(store,"monitor.enable",monitor_enable)
+			--[[
+			store:update({
                 sql = "replace into meta SET `key`=?, `value`=?",
                 params = { "monitor.enable", monitor_enable }
             })
+			--]]
 
             if update_result then
                 local success, err, forcible = orange_db.set("monitor.enable", enable)
@@ -65,10 +69,13 @@ API["/monitor/fetch_config"] = {
         return function(req, res, next)
             local success, data = false, {}
             -- 查找enable
-            local enable, err1 = store:query({
+            local enable, err1 = monitor_db.select_meta_value(store,"monitor.enable")
+			--[[
+			store:query({
                 sql = "select `value` from meta where `key`=?",
                 params = { "monitor.enable" }
             })
+			--]]
 
             if err1 then
                 return res:json({
@@ -84,9 +91,12 @@ API["/monitor/fetch_config"] = {
             end
 
             -- 查找rules
-            local rules, err2 = store:query({
+            local rules, err2 = monitor_db.select_monitor_rules(store)
+			--[[
+			store:query({
                 sql = "select `value` from monitor order by id asc"
             })
+			--]]
             if err2 then
                 return res:json({
                     success = false,
@@ -97,7 +107,11 @@ API["/monitor/fetch_config"] = {
             if rules and type(rules) == "table" and #rules > 0 then
                 local format_rules = {}
                 for i, v in ipairs(rules) do
-                    table_insert(format_rules, cjson.decode(v.value))
+					if type(v.value) == "table" then
+						table_insert(format_rules, v.value)
+					else
+						table_insert(format_rules, cjson.decode(v.value))
+					end
                 end
                 data.rules = format_rules
             else
@@ -119,10 +133,13 @@ API["/monitor/sync"] = {
         return function(req, res, next)
             local success, data = false, {}
             -- 查找enable
-            local enable, err1 = store:query({
+            local enable, err1 = monitor_db.select_meta_value(store,"monitor.enable")
+			--[[
+			store:query({
                 sql = "select `value` from meta where `key`=?",
                 params = { "monitor.enable" }
             })
+			--]]
 
             if err1 then
                 return res:json({
@@ -138,9 +155,12 @@ API["/monitor/sync"] = {
             end
 
             -- 查找rules
-            local rules, err2 = store:query({
+            local rules, err2 = monitor_db.select_monitor_rules(store)
+			--[[
+			store:query({
                 sql = "select `value` from monitor order by id asc"
             })
+			--]]
             if err2 then
                 return res:json({
                     success = false,
@@ -151,7 +171,11 @@ API["/monitor/sync"] = {
             if rules and type(rules) == "table" and #rules > 0 then
                 local format_rules = {}
                 for i, v in ipairs(rules) do
-                    table_insert(format_rules, cjson.decode(v.value))
+					if type(v.value) == 'table'then
+						table_insert(format_rules, v.value)
+					else
+						table_insert(format_rules, cjson.decode(v.value))
+					end
                 end
                 data.rules = format_rules
             else
@@ -205,10 +229,13 @@ API["/monitor/configs"] = {
 
             local success = false
             -- 插入到mysql
-            local insert_result = store:insert({
+            local insert_result = monitor_db.insert_monitor_rules(store,rule.id,rule)
+			--[[
+			store:insert({
                 sql = "insert into monitor(`key`, `value`) values(?,?)",
                 params = { rule.id, cjson.encode(rule) }
             })
+			--]]
 
             -- 插入成功，则更新本地缓存
             if insert_result then
@@ -240,10 +267,13 @@ API["/monitor/configs"] = {
                 })
             end
 
-            local delete_result = store:delete({
+            local delete_result = monitor_db.delete_monitor_rules(store,rule_id)
+			--[[
+			store:delete({
                 sql = "delete from monitor where `key`=?",
                 params ={rule_id}
             })
+			--]]
 
             if delete_result then
                 local old_rules = orange_db.get_json("monitor.rules") or {}
@@ -280,10 +310,13 @@ API["/monitor/configs"] = {
             local rule = req.body.rule
             rule = cjson.decode(rule)
 
-            local update_result = store:delete({
+            local update_result = monitor_db.update_monitor_rules(store,rule.id,rule)
+			--[[
+			store:delete({
                 sql = "update monitor set `value`=? where `key`=?",
                 params ={cjson.encode(rule), rule.id}
             })
+			--]]
 
             if update_result then
                 local old_rules = orange_db.get_json("monitor.rules") or {}

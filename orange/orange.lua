@@ -10,6 +10,7 @@ local config_loader = require("orange.utils.config_loader")
 local orange_db = require("orange.store.orange_db")
 local logger = require("orange.utils.logger")
 
+
 local HEADERS = {
     PROXY_LATENCY = "X-Orange-Proxy-Latency",
     UPSTREAM_LATENCY = "X-Orange-Upstream-Latency",
@@ -132,6 +133,49 @@ local function load_data_by_mysql(store, config)
     end
 end
 
+--- load data for orange and its plugins from PgSQL
+-- ${plugin}.enable
+-- ${plugin}.rules
+local function load_data_by_pgsql(store, config)
+    -- 查找enable
+    local enables, err = store:query({
+        sql = "select key, value from meta where key like '%.enable'"
+    })
+
+    if err then
+        ngx.log(ngx.ERR, "Load Meta Data error: ", err)
+        os.exit(1)
+    end
+
+    if enables and type(enables) == "table" and #enables > 0 then
+        for i, v in ipairs(enables) do
+            orange_db.set(v.key, v.value == "1")
+        end
+    end
+
+    local available_plugins = config.plugins
+    for i, v in ipairs(available_plugins) do
+        if v ~= "stat" then
+            local rules, err = store:query({
+                sql = "select value from " .. v .. " order by id asc"
+            })
+
+            if err then
+                ngx.log(ngx.ERR, "Load Plugin Rules Data error: ", err)
+                os.exit(1)
+            end
+
+            if rules and type(rules) == "table" and #rules > 0 then
+                local format_rules = {}
+                for i, v in ipairs(rules) do
+                    table_insert(format_rules, v.value)
+                end
+                orange_db.set_json(v .. ".rules", format_rules)
+            end
+        end
+    end
+end
+
 
 
 -- ########################### Orange #############################
@@ -148,7 +192,11 @@ function Orange.init(options)
     local status, err = pcall(function()
         local conf_file_path = options.config
         config = config_loader.load(conf_file_path)
-        store = require("orange.store.mysql_store")(config.store_mysql)
+		if config.store == "mysql" then
+			store = require("orange.store.mysql_store")(config.store_mysql)
+		elseif config.store == "pgsql" then
+			store = require("orange.store.pgsql_store")(config.store_pgsql)
+		end
 
         loaded_plugins = load_node_plugins(config, store)
         ngx.update_time()
@@ -170,11 +218,17 @@ end
 
 function Orange.init_worker()
     -- 初始化定时器，清理计数器等
-    if Orange.data and Orange.data.store and Orange.data.config.store == "mysql" then
+	if Orange.data and Orange.data.store then
         local worker_id = ngx.worker.id()
         if worker_id == 0 then
             local ok, err = ngx.timer.at(0, function(premature, store, config)
-                load_data_by_mysql(store, config)
+				local store_db = Orange.data.config.store
+
+				if store_db == "mysql" then
+					load_data_by_mysql(store, config)
+				elseif store_db == "pgsql" then
+					load_data_by_pgsql(store,config)
+				end
             end, Orange.data.store, Orange.data.config)
             if not ok then
                 ngx.log(ngx.ERR, "failed to create the timer: ", err)

@@ -6,6 +6,7 @@ local tostring = tostring
 local cjson = require("cjson")
 local utils = require("orange.utils.utils")
 local orange_db = require("orange.store.orange_db")
+local rewrite_db = require("orange.plugins.rewrite.rewrite_db")
 
 API["/rewrite/enable"] = {
     POST = function(store)
@@ -17,10 +18,13 @@ API["/rewrite/enable"] = {
             
             local rewrite_enable = "0"
             if enable then rewrite_enable = "1" end
-            local update_result = store:update({
+            local update_result = rewrite_db.replace_meta_value(store,"rewrite.enable", rewrite_enable)
+			--[[
+			store:update({
                 sql = "replace into meta SET `key`=?, `value`=?",
                 params = { "rewrite.enable", rewrite_enable }
             })
+			--]]
 
             if update_result then
                 local success, err, forcible = orange_db.set("rewrite.enable", enable)
@@ -51,10 +55,13 @@ API["/rewrite/fetch_config"] = {
             local success, data = false, {}
             
             -- 查找enable
-            local enable, err1 = store:query({
+            local enable, err1 = rewrite_db.select_meta_value(store,"rewrite.enable")
+			--[[
+			store:query({
                 sql = "select `value` from meta where `key`=?",
                 params = { "rewrite.enable" }
             })
+			--]]
 
             if err1 then
                 return res:json({
@@ -70,9 +77,12 @@ API["/rewrite/fetch_config"] = {
             end
 
             -- 查找rules
-            local rules, err2 = store:query({
+            local rules, err2 = rewrite_db.select_rewrite_rules(store)
+			--[[
+			store:query({
                 sql = "select `value` from rewrite order by id asc"
             })
+			--]]
             if err2 then
                 return res:json({
                     success = false,
@@ -83,7 +93,11 @@ API["/rewrite/fetch_config"] = {
             if rules and type(rules) == "table" and #rules > 0 then
                 local format_rules = {}
                 for i, v in ipairs(rules) do
-                    table_insert(format_rules, cjson.decode(v.value))
+					if type(v.value) == 'table' then
+						table_insert(format_rules, v.value)
+					else
+						table_insert(format_rules, cjson.decode(v.value))
+					end
                 end
                 data.rules = format_rules
                 success = true
@@ -107,10 +121,13 @@ API["/rewrite/sync"] = {
             local success, data = false, {}
             
             -- 查找enable
-            local enable, err1 = store:query({
+            local enable, err1 = rewrite_db.select_meta_value(store,"rewrite.enable")
+			--[[
+			store:query({
                 sql = "select `value` from meta where `key`=?",
                 params = { "rewrite.enable" }
             })
+			--]]
 
             if err1 then
                 return res:json({
@@ -126,9 +143,12 @@ API["/rewrite/sync"] = {
             end
 
             -- 查找rules
-            local rules, err2 = store:query({
+            local rules, err2 = rewrite_db.select_rewrite_rules(store)
+			--[[
+			store:query({
                 sql = "select `value` from rewrite order by id asc"
             })
+			--]]
             if err2 then
                 return res:json({
                     success = false,
@@ -139,7 +159,11 @@ API["/rewrite/sync"] = {
             if rules and type(rules) == "table" and #rules > 0 then
                 local format_rules = {}
                 for i, v in ipairs(rules) do
-                    table_insert(format_rules, cjson.decode(v.value))
+					if type(v.value) == 'table' then
+						table_insert(format_rules, v.value)
+					else
+						table_insert(format_rules, cjson.decode(v.value))
+					end
                 end
                 data.rules = format_rules
             else
@@ -196,10 +220,13 @@ API["/rewrite/configs"] = {
             local success = false
            
             -- 插入到mysql
-            local insert_result = store:insert({
+            local insert_result = rewrite_db.insert_rewrite_rules(store,rule.id,rule)
+			--[[
+			store:insert({
                 sql = "insert into rewrite(`key`, `value`) values(?,?)",
                 params = { rule.id, cjson.encode(rule) }
             })
+			--]]
 
             -- 插入成功，则更新本地缓存
             if insert_result then
@@ -231,10 +258,13 @@ API["/rewrite/configs"] = {
                 })
             end
 
-            local delete_result = store:delete({
+            local delete_result = rewrite_db.delete_rewrite_rules(store,rule_id)
+			--[[
+			store:delete({
                 sql = "delete from rewrite where `key`=?",
                 params = { rule_id }
             })
+			--]]
 
             if delete_result then
                 local old_rules = orange_db.get_json("rewrite.rules") or {}
@@ -272,10 +302,13 @@ API["/rewrite/configs"] = {
             local rule = req.body.rule
             rule = cjson.decode(rule)
 
-            local update_result = store:delete({
+            local update_result = rewrite_db.update_rewrite_rules(store,rule.id,rule)
+			--[[
+			store:delete({
                 sql = "update rewrite set `value`=? where `key`=?",
                 params = { cjson.encode(rule), rule.id }
             })
+			--]]
 
             if update_result then
                 local old_rules = orange_db.get_json("rewrite.rules") or {}

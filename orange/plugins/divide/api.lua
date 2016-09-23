@@ -6,6 +6,7 @@ local tostring = tostring
 local cjson = require("cjson")
 local utils = require("orange.utils.utils")
 local orange_db = require("orange.store.orange_db")
+local divide_db = require("orange.plugins.divide.divide_db")
 
 API["/divide/enable"] = {
     POST = function(store)
@@ -17,11 +18,8 @@ API["/divide/enable"] = {
     
             local divide_enable = "0"
             if enable then divide_enable = "1" end
-            local update_result = store:update({
-                sql = "replace into meta SET `key`=?, `value`=?",
-                params = { "divide.enable", divide_enable }
-            })
-
+            local update_result = divide_db.replace_meta_value(store,"divide.enable",divide_enable)
+			
             if update_result then
                 local success, err, forcible = orange_db.set("divide.enable", enable)
                 result = success
@@ -51,11 +49,7 @@ API["/divide/fetch_config"] = {
             local success, data = false, {enable=false}
             
             -- 查找enable
-            local enable, err1 = store:query({
-                sql = "select `value` from meta where `key`=?",
-                params = { "divide.enable" }
-            })
-
+            local enable, err1 = divide_db.select_meta_value(store,"divide.enable")
             if err1 then
                 return res:json({
                     success = false,
@@ -70,9 +64,12 @@ API["/divide/fetch_config"] = {
             end
 
             -- 查找rules
-            local rules, err2 = store:query({
+            local rules, err2 = divide_db.select_divide_rules(store)
+			--[[
+			store:query({
                 sql = "select `value` from divide order by id asc"
             })
+			--]]
             if err2 then
                 return res:json({
                     success = false,
@@ -83,7 +80,11 @@ API["/divide/fetch_config"] = {
             if rules and type(rules) == "table" and #rules > 0 then
                 local format_rules = {}
                 for i, v in ipairs(rules) do
-                    table_insert(format_rules, cjson.decode(v.value))
+					if type(v.value) == 'table' then
+						table_insert(format_rules, v.value)
+					else
+						table_insert(format_rules, cjson.decode(v.value))
+					end
                 end
                 data.rules = format_rules
                 success = true
@@ -107,10 +108,13 @@ API["/divide/sync"] = {
             local success, data = false, {}
             
             -- 查找enable
-            local enable, err1 = store:query({
+            local enable, err1 = divide_db.select_meta_value(store,"divide.enable")
+			--[[
+			store:query({
                 sql = "select `value` from meta where `key`=?",
                 params = { "divide.enable" }
             })
+			--]]
 
             if err1 then
                 return res:json({
@@ -126,9 +130,12 @@ API["/divide/sync"] = {
             end
 
             -- 查找rules
-            local rules, err2 = store:query({
+            local rules, err2 = divide_db.select_divide_rules(store)
+			--[[
+			store:query({
                 sql = "select `value` from divide order by id asc"
             })
+			--]]
             if err2 then
                 return res:json({
                     success = false,
@@ -139,7 +146,11 @@ API["/divide/sync"] = {
             if rules and type(rules) == "table" and #rules > 0 then
                 local format_rules = {}
                 for i, v in ipairs(rules) do
-                    table_insert(format_rules, cjson.decode(v.value))
+					if type(v.value) == 'table' then
+						table_insert(format_rules, v.value)
+					else
+						table_insert(format_rules, cjson.decode(v.value))
+					end
                 end
                 data.rules = format_rules
             else
@@ -195,10 +206,13 @@ API["/divide/configs"] = {
             local success = false
             
             -- 插入到mysql
-            local insert_result = store:insert({
+            local insert_result = divide_db.insert_divide_rule(store,rule.id,rule)
+			--[[
+			store:insert({
                 sql = "insert into divide(`key`, `value`) values(?,?)",
                 params = { rule.id, cjson.encode(rule) }
             })
+			--]]
 
             -- 插入成功，则更新本地缓存
             if insert_result then
@@ -231,10 +245,13 @@ API["/divide/configs"] = {
             end
 
 
-            local delete_result = store:delete({
+            local delete_result = divide_db.delete_divide_rule(store,rule_id)
+			--[[
+			store:delete({
                 sql = "delete from divide where `key`=?",
                 params = { rule_id }
             })
+			--]]
 
             if delete_result then
                 local old_rules = orange_db.get_json("divide.rules") or {}
@@ -273,10 +290,13 @@ API["/divide/configs"] = {
             local rule = req.body.rule
             rule = cjson.decode(rule)
         
-            local update_result = store:delete({
+            local update_result = divide_db.update_divide_rule(store,rule.id,rule)
+			--[[
+			store:delete({
                 sql = "update divide set `value`=? where `key`=?",
                 params = { cjson.encode(rule), rule.id }
             })
+			--]]
 
             if update_result then
                 local old_rules = orange_db.get_json("divide.rules") or {}

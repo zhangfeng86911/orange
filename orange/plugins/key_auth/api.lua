@@ -6,6 +6,7 @@ local tostring = tostring
 local cjson = require("cjson")
 local utils = require("orange.utils.utils")
 local orange_db = require("orange.store.orange_db")
+local key_auth_db = require("orange.plugins.key_auth.key_auth_db")
 
 API["/key_auth/enable"] = {
     POST = function(store)
@@ -17,10 +18,13 @@ API["/key_auth/enable"] = {
             
             local key_auth_enable = "0"
             if enable then key_auth_enable = "1" end
-            local update_result = store:update({
+            local update_result = key_auth_db.replace_meta_value(store,"key_auth.enable", key_auth_enable )
+			--[[
+			store:update({
                 sql = "replace into meta SET `key`=?, `value`=?",
                 params = { "key_auth.enable", key_auth_enable }
             })
+			--]]
 
             if update_result then
                 local success, err, forcible = orange_db.set("key_auth.enable", enable)
@@ -52,10 +56,13 @@ API["/key_auth/fetch_config"] = {
             local success, data = false, {}
             
             -- 查找enable
-            local enable, err1 = store:query({
+            local enable, err1 = key_auth_db.select_meta_value(store,"key_auth.enable")
+			--[[
+			store:query({
                 sql = "select `value` from meta where `key`=?",
                 params = { "key_auth.enable" }
             })
+			--]]
 
             if err1 then
                 return res:json({
@@ -71,9 +78,12 @@ API["/key_auth/fetch_config"] = {
             end
 
             -- 查找rules
-            local rules, err2 = store:query({
+            local rules, err2 = key_auth_db.select_key_auth_rules(store)
+			--[[
+			store:query({
                 sql = "select `value` from key_auth order by id asc"
             })
+			--]]
             if err2 then
                 return res:json({
                     success = false,
@@ -84,7 +94,11 @@ API["/key_auth/fetch_config"] = {
             if rules and type(rules) == "table" and #rules > 0 then
                 local format_rules = {}
                 for i, v in ipairs(rules) do
-                    table_insert(format_rules, cjson.decode(v.value))
+					if type(v.value) == 'table'then
+						table_insert(format_rules, v.value)
+					else
+						table_insert(format_rules, cjson.decode(v.value))
+					end
                 end
                 data.rules = format_rules
                 success = true
@@ -107,10 +121,13 @@ API["/key_auth/sync"] = {
         return function(req, res, next)
             local success, data = false, {}
             -- 查找enable
-            local enable, err1 = store:query({
+            local enable, err1 = key_auth_db.select_meta_value(store,"key_auth.enable")
+			--[[
+			store:query({
                 sql = "select `value` from meta where `key`=?",
                 params = { "key_auth.enable" }
             })
+			--]]
 
             if err1 then
                 return res:json({
@@ -126,9 +143,12 @@ API["/key_auth/sync"] = {
             end
 
             -- 查找rules
-            local rules, err2 = store:query({
+            local rules, err2 = key_auth_db.select_key_auth_rules(store)
+			--[[
+			store:query({
                 sql = "select `value` from key_auth order by id asc"
             })
+			--]]
             if err2 then
                 return res:json({
                     success = false,
@@ -139,7 +159,11 @@ API["/key_auth/sync"] = {
             if rules and type(rules) == "table" and #rules > 0 then
                 local format_rules = {}
                 for i, v in ipairs(rules) do
-                    table_insert(format_rules, cjson.decode(v.value))
+					if type(v.value) == 'table'then
+						table_insert(format_rules, v.value)
+					else
+						table_insert(format_rules, cjson.decode(v.value))
+					end
                 end
                 data.rules = format_rules
             else
@@ -198,10 +222,13 @@ API["/key_auth/configs"] = {
             local success, data = false, {}
             
             -- 插入到mysql
-            local insert_result = store:insert({
+            local insert_result = key_auth_db.insert_key_auth_rules(store,rule.id,rule)
+			--[[
+			store:insert({
                 sql = "insert into key_auth(`key`, `value`) values(?,?)",
                 params = { rule.id, cjson.encode(rule) }
             })
+			--]]
 
             -- 插入成功，则更新本地缓存
             if insert_result then
@@ -236,10 +263,13 @@ API["/key_auth/configs"] = {
                 })
             end
 
-            local delete_result = store:delete({
+            local delete_result = key_auth_db.delete_key_auth_rules(store,rule_id)
+			--[[
+			store:delete({
                 sql = "delete from key_auth where `key`=?",
                 params = { rule_id }
             })
+			--]]
 
             if delete_result then
                 local old_rules = orange_db.get_json("key_auth.rules") or {}
@@ -280,10 +310,13 @@ API["/key_auth/configs"] = {
             local rule = req.body.rule
             rule = cjson.decode(rule)
 
-            local update_result = store:delete({
+            local update_result = key_auth_db.update_key_auth_rules(store,rule.id,rule)
+			--[[
+			store:delete({
                 sql = "update key_auth set `value`=? where `key`=?",
                 params = { cjson.encode(rule), rule.id }
             })
+			--]]
 
             if update_result then
                 local old_rules = orange_db.get_json("key_auth.rules") or {}
